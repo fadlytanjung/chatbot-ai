@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  PaperAirplaneIcon,
   PlusIcon,
   GlobeAltIcon,
   SparklesIcon,
@@ -9,7 +8,7 @@ import {
   EllipsisHorizontalIcon,
   MicrophoneIcon,
 } from "@heroicons/react/24/outline";
-import { StopIcon } from "@heroicons/react/24/solid";
+import { StopIcon, ArrowUpIcon } from "@heroicons/react/24/solid";
 import { useState, KeyboardEvent, ChangeEvent, FormEvent } from "react";
 
 export default function ChatInput({
@@ -113,7 +112,7 @@ export default function ChatInput({
                 {isLoading ? (
                   <StopIcon className="h-5 w-5" />
                 ) : (
-                  <PaperAirplaneIcon className="h-5 w-5 rotate-0" />
+                  <ArrowUpIcon className="h-5 w-5 font-semibold" />
                 )}
               </button>
               <button

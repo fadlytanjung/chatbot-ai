@@ -3,7 +3,7 @@
 import ChatInput from "@/components/chat-input";
 import ChatHeader from "@/components/chat-header";
 import ChatMessage from "@/components/chat-message";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { env } from "@/libs/env";
 
 export interface Message {
@@ -15,6 +15,11 @@ export interface Message {
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const onSubmit = useCallback(async (text: string) => {
     if (!text.trim()) return;
@@ -30,7 +35,10 @@ export default function Chat() {
     ]);
     setLoading(true);
 
-    const res = await fetch(`${env.NEXT_PUBLIC_BASE_URL}/api/genai`);
+    const res = await fetch(`${env.NEXT_PUBLIC_BASE_URL}/api/genai`, {
+      method: "POST",
+      body: JSON.stringify({ question: text }),
+    });
     if (!res.ok || !res.body) {
       console.error("Failed to fetch stream");
       setLoading(false);
@@ -49,8 +57,7 @@ export default function Chat() {
 
         setMessages((prev) => {
           const copy = [...prev];
-          const last = copy[copy.length - 1];
-          last.text = buffer;
+          copy[copy.length - 1].text = buffer;
           return copy;
         });
       }
@@ -72,6 +79,7 @@ export default function Chat() {
             messages.map((m) => <ChatMessage {...m} key={m.id} />)
           )}
         </div>
+        <div ref={bottomRef} />
       </main>
       <ChatInput onSubmit={onSubmit} isLoading={loading} />
     </>
