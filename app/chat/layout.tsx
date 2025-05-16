@@ -1,5 +1,3 @@
-import { ChatInput } from "@/components/chat-input";
-
 export const metadata = { title: "Open AI Clone" };
 
 export default function ChatLayout({
@@ -10,7 +8,6 @@ export default function ChatLayout({
   return (
     <div className="flex flex-col justify-center h-screen">
       {children}
-      <ChatInput />
     </div>
   );
 }
