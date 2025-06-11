@@ -12,6 +12,13 @@ export interface Message {
   fromUser: boolean;
 }
 
+function toApiMessages(history: Message[]) {
+  return history.map((m) => ({
+    role: m.fromUser ? "user" : "assistant",
+    content: m.text,
+  }));
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
@@ -35,12 +42,19 @@ export default function Chat() {
     ]);
     setLoading(true);
 
-    const res = await fetch(`${env.NEXT_PUBLIC_BASE_URL}/api/genai`, {
+    const fullHistory = toApiMessages(messages.concat({ id: messages.length + 1, fromUser: true, text }));
+    const controller = new AbortController();
+
+    const res = await fetch(`${env.NEXT_PUBLIC_API_URL}/ai/chat`, {
       method: "POST",
-      body: JSON.stringify({ question: text }),
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ messages: fullHistory }),
+      signal: controller.signal,
     });
+
     if (!res.ok || !res.body) {
-      console.error("Failed to fetch stream");
+      console.error("Failed to fetch stream", res.status);
       setLoading(false);
       return;
     }
@@ -49,29 +63,27 @@ export default function Chat() {
     const decoder = new TextDecoder();
     let buffer = "";
 
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
 
-        setMessages((prev) => {
-          const copy = [...prev];
-          copy[copy.length - 1].text = buffer;
-          return copy;
-        });
-      }
+      setMessages((prev) => {
+        const copy = [...prev];
+        copy[copy.length - 1].text = buffer;
+        return copy;
+      });
     }
 
     setLoading(false);
-  }, []);
+  }, [messages]);
 
   return (
     <>
-      {messages.length && <ChatHeader />}
+      {messages.length > 0 && <ChatHeader />}
       <main className={`${messages.length ? "flex-1 overflow-y-auto" : ""}`}>
         <div className="md:w-[768px] w-full mx-auto overflow-y-auto p-4">
-          {!messages.length ? (
+          {messages.length === 0 ? (
             <p className="text-center font-medium text-2xl">
               What can I help with?
             </p>
